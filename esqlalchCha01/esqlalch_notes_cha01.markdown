@@ -48,8 +48,25 @@ engine and connection, and may be accessed via `MetaData.tables`.
 ## Tables
 
 Tables are initialized in a supplied metadata object using the `Table` constructor.
-Column objects represent each field in the table.
+Column objects represent each field in the table - they are the fundamental
+building blocks. Note:
 
+* we may mark primary keys
+* we may specify indices
 
+### Columns
+
+Columns define the fields in a table and provide the primary means by which we
+define other constraints through their keyword arguments. Different column types
+feature different primary arguments. Also:
+
+* may mark required
+* force uniqueness
+* set initial defaults
+
+It is also possible to declare table constructs and constraints outisde of `Column`
+objects. This is important when working with existing databases.
+
+### Keys and Constraints
 
 
