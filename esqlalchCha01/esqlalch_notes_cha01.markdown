@@ -100,3 +100,21 @@ is:
 
 ### Relationships and `ForeignKeyConstraint`s
 
+How do we create relationships between tables? Association tables are used to
+enable many-to-many relationships between two tables. A single `ForeignKey` on
+a table is usually a sign of a one-to-many relationship. If there are mutltiple
+`ForeignKey`s, there is a strong possibility the table is an association table.
+
+Note that SQLAlchemy will only perform the resolution of a string to a table name
+and column the first time it is accessed. If we used hard references, such as
+`cookies.c.cookie_id` in our `ForeignKey` definitions, it will perform resolution
+during module initialization. This could fail depending on the order in which
+the tables are loaded.
+
+## Persisting the Tables
+
+Persisting the schema associated with our instance of `metadata` only requires
+calling the `create_all()` method on it with the engine that should create
+the tables. By default, it will not attempt to re-create tables that already
+exist in the DB. In order to make changes or migrations, it is a good idea to
+use a specialized tool like Alembic.

@@ -1,8 +1,14 @@
 from sqlalchemy import MetaData
-from sqlalchemy import Table, Column, Integer, Numeric, String, ForeignKey
+from sqlalchemy import Table, Column, ForeignKey
+from sqlalchemy import Integer, Numeric, Boolean, String
+# from sqlalchemy import PrimaryKeyConstraint, UniqueConstraint
+from sqlalchemy import CheckConstraint
+from sqlalchemy import create_engine
 
 from datetime import datetime
 from sqlalchemy import DateTime
+
+from mariadb_connect import conn_str
 
 metadata = MetaData()
 
@@ -14,6 +20,12 @@ cookies = Table('cookies', metadata,
                 Column('quantity', Integer()),
                 Column('unit_cost', Numeric(12, 2))
                 )
+
+CheckConstraint('unit_cost >= 0.00', name='unit_cost_positive')
+
+# Instead of specifying the index inside the `Column`, we could say:
+# from sqlalchemy import Index
+# Index('ix_cookies_cookie_name', 'cookie_name')
 
 # note that we set the `default` and `onupdate` times equal to the callable
 # function instead of calling the function - this means we get the time
@@ -27,3 +39,31 @@ users = Table('users', metadata,
               Column('created_on', DateTime(), default=datetime.now),
               Column('updated_on', DateTime(), default=datetime.now,
                      onupdate=datetime.now))
+
+# Instead of specifying these in the `Column` declaration, we can say:
+# PrimaryKeyConstraint('user_id', name='user_pk')
+# UniqueConstraint('username', name='uix_username')
+
+# Note that we use strings instead of references to actual tables when creating
+# the `ForeignKey`: this allows us to separate table definitions across
+# multiple modules and to not worry about the order in which tables are loaded.
+orders = Table('orders', metadata,
+               Column('order_id', Integer(), primary_key=True),
+               Column('user_id', ForeignKey('users.user_id')),
+               Column('shipped', Boolean(), default=False))
+
+line_items = Table('line_items', metadata,
+                   Column('line_items_id', Integer(), primary_key=True),
+                   Column('order_id', ForeignKey('orders.order_id')),
+                   Column('cookie_id', ForeignKey('cookies.cookie_id')),
+                   Column('quantity', Integer()),
+                   Column('extended_cost', Numeric(12, 2)))
+
+# Instead of defining the `ForeignKey` in the `Column`, we could have said,
+# from sqlalchemy import ForeignKeyConstraint
+# ForeignKeyConstraint(['order_id'], ['orders.order_id'])
+# This creates a constraint for the `order_id` field between the `line_items`
+# table and the `orders` table.
+
+engine = create_engine(conn_str)
+metadata.create_all(engine)
