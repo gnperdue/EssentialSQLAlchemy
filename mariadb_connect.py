@@ -10,3 +10,10 @@ with open(passwd_file, 'r') as f:
 
 conn_str = 'mysql+pymysql://' + username + ':' + passwd + \
            '@localhost/essential_alchemy'
+
+
+def db_conn_str(dbname):
+    global username
+    global passwd
+    return 'mysql+pymysql://' + username + ':' + passwd + \
+           '@localhost/' + str(dbname)
