@@ -8,12 +8,12 @@ engine = create_engine(db_conn_str('tester'), echo=True)
 connection = engine.connect()
 
 connection.execute(
-"""
-CREATE TABLE users (
-username VARCHAR(32) PRIMARY KEY,
-password VARCHAR(128) NOT NULL
-);
-"""
+    """
+    CREATE TABLE users (
+    username VARCHAR(32) PRIMARY KEY,
+    password VARCHAR(128) NOT NULL
+    );
+    """
 )
 
 connection.execute(
