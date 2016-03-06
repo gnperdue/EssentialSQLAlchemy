@@ -287,3 +287,213 @@ We may call `order_by()` on our select:
     24 - peanut butter
     100 - oatmeal raisin
 
+We may also use descending order:
+
+    ... restarting the session ...
+    In [1]: run select5.py
+    2016-02-28 05:53:17,901 INFO sqlalchemy.engine.base.Engine SHOW VARIABLES LIKE 'sql_mode'
+    2016-02-28 05:53:17,901 INFO sqlalchemy.engine.base.Engine ()
+    2016-02-28 05:53:17,903 INFO sqlalchemy.engine.base.Engine SELECT DATABASE()
+    ...
+    2016-02-28 05:53:17,924 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_name, cookies.quantity
+    FROM cookies ORDER BY cookies.quantity DESC
+    2016-02-28 05:53:17,924 INFO sqlalchemy.engine.base.Engine ()
+    100 - oatmeal raisin
+    24 - peanut butter
+    12 - chocolate chip
+    1 - white chocolate chip and macadamia nut
+    1 - dark chocolate chip
+
+### Limiting
+
+While we may use `ResultProxy` to get the `first()` or one (via `fetchone()`)
+result, the actual query ran over and accessed all the results. To limit the
+query, we must use the `limit()` function.
+
+    In [2]: run limit1.py
+    2016-02-28 05:56:52,105 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_name, cookies.quantity
+    FROM cookies ORDER BY cookies.quantity
+     LIMIT %s
+    2016-02-28 05:56:52,105 INFO sqlalchemy.engine.base.Engine (2,)
+    1 - white chocolate chip and macadamia nut
+    1 - dark chocolate chip
+
+### Built-in SQL Functions and Labels
+
+SQLAlchemy can also leverage SQL functions on the DB backend. To use functions
+like `SUM()` and `COUNT()` we need to import `sqlalchemy.sql.func`. The functions
+are wrapped around the columns on which they operate.
+
+    In [3]: run sqlfunc1.py
+    2016-02-28 06:29:07,125 INFO sqlalchemy.engine.base.Engine SELECT sum(cookies.quantity) AS sum_1
+    FROM cookies
+    2016-02-28 06:29:07,125 INFO sqlalchemy.engine.base.Engine ()
+    138
+    
+    MariaDB [essential_alchemy]> SELECT sum(cookies.quantity) AS sum_1 FROM cookies;
+    +-------+
+    | sum_1 |
+    +-------+
+    |   138 |
+    +-------+
+    1 row in set (0.00 sec)
+
+And,
+
+    In [6]: run sqlfunc2.py
+    2016-02-28 17:08:47,905 INFO sqlalchemy.engine.base.Engine SELECT count(cookies.cookie_name) AS count_1
+    FROM cookies
+    2016-02-28 17:08:47,905 INFO sqlalchemy.engine.base.Engine ()
+    [u'count_1']
+    5
+
+    MariaDB [essential_alchemy]> SELECT count(cookies.cookie_name) AS count_1
+        -> FROM cookies;
+    +---------+
+    | count_1 |
+    +---------+
+    |       5 |
+    +---------+
+    1 row in set (0.00 sec)
+
+We can make the result a bit more clear with the `label()` function:
+
+    In [2]: run sqlfunc3.py
+    2016-03-02 21:07:25,438 INFO sqlalchemy.engine.base.Engine SELECT count(cookies.cookie_name) AS inventory_count
+    FROM cookies
+    2016-03-02 21:07:25,438 INFO sqlalchemy.engine.base.Engine ()
+    ['inventory_count']
+    5
+
+### Filtering
+
+Filtering queries is done with `where()` statements. Usually, a `where()` clause
+has a column, an operator, and a value or column. We may chain multiple `where()`
+clauses together and they act like `AND`s in SQL statements.
+
+    In [4]: run filtering1.py
+    2016-03-02 21:11:02,769 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_id, cookies.cookie_name, cookies.cookie_recipe_url, cookies.cookie_sku, cookies.quantity, cookies.unit_cost
+    FROM cookies
+    WHERE cookies.cookie_name = %s
+    2016-03-02 21:11:02,770 INFO sqlalchemy.engine.base.Engine ('chocolate chip',)
+    [('cookie_id', 1), ('cookie_name', 'chocolate chip'), ('cookie_recipe_url', 'http://some.aweso.me/cookie/recipe.html'), ('cookie_sku', 'CC01'), ('quantity', 12), ('unit_cost', Decimal('0.50'))]
+
+We can also use `like()`:
+
+    In [5]: run filtering2.py
+    2016-03-02 21:30:34,417 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_id, cookies.cookie_name, cookies.cookie_recipe_url, cookies.cookie_sku, cookies.quantity, cookies.unit_cost
+    FROM cookies
+    WHERE cookies.cookie_name LIKE %s
+    2016-03-02 21:30:34,417 INFO sqlalchemy.engine.base.Engine ('%chocolate chip%',)
+    chocolate chip
+    white chocolate chip and macadamia nut
+    dark chocolate chip
+
+### `ClauseElement`s
+
+`ClauseElement`s are entities we use in clauses, typically columns in a table.
+Unlike columns though, `ClauseElements` have many additional capabilities.
+Examples include:
+
+* `between(cleft, cright)`
+* `concat(column_two)`
+* `distinct()`
+* `in_([list])`
+* `is_(None)`
+* `contains(<string>)`
+* `endswith(<string>)`
+* `like(<string>)`
+* `startswith(<string>)`
+* `ilike(<string>)`
+
+There are also negative versions of these methods, e.g. `notlike` and `notin_()`.
+The only exception to the naming pattern is `isnot()`, which drops the
+underscore.
+
+### Operators
+
+We may use many operators to filter data. We have standard comparison operators,
+`==`, `!=`, `<`, `>`, `<=`, `>=`. If `==` is compared to `None`, it is converted
+to an `IS NULL` statement. Arithmetic operators are also supported, e.g., `+`,
+`-`, `*`, `/`, and `%` with database-independent capabilities for string
+concatenation (`\+`), etc.
+
+    In [1]: run operators1.py
+    2016-03-04 18:56:11,378 INFO sqlalchemy.engine.base.Engine SHOW VARIABLES LIKE 'sql_mode'
+    2016-03-04 18:56:11,378 INFO sqlalchemy.engine.base.Engine ()
+    ...
+    2016-03-04 18:56:11,412 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_name, concat(%s, cookies.cookie_sku) AS anon_1
+    FROM cookies
+    2016-03-04 18:56:11,412 INFO sqlalchemy.engine.base.Engine ('SKU-',)
+    ('chocolate chip', 'SKU-CC01')
+    ('white chocolate chip and macadamia nut', 'SKU-CC03')
+    ('dark chocolate chip', 'SKU-CC02')
+    ('peanut butter', 'SKU-PB01')
+    ('oatmeal raisin', 'SKU-EWW01')
+
+Another common use it to compute values from multiple columns.
+
+    In [3]: run operators2.py
+    2016-03-04 19:01:07,593 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_name, CAST(cookies.quantity * cookies.unit_cost AS DECIMAL(12, 2)) AS inv_cost
+    FROM cookies
+    2016-03-04 19:01:07,593 INFO sqlalchemy.engine.base.Engine ()
+    chocolate chip - 6.00
+    white chocolate chip and macadamia nut - 1.00
+    dark chocolate chip - 0.75
+    peanut butter - 6.00
+    oatmeal raisin - 100.00
+
+### Boolean Operators
+
+SQLAlchemy also has `AND`, `OR`, and `NOT` via `&`, `|`, and `~`. Special care
+must be taken with these due to Python's operator precedence rules. So, `&`
+binds more closely than `<`, so `A < B & C < D` really means `A < (B&C) < D`
+even though you may have meant `(A < B) & (C < D)`. Conjuctions are better than
+these overloads. Conjuctions also let us handle multiple chained `where()`
+clauses.
+
+### Conjunctions
+
+Conjunctions in SQLAlchemcy are `and_()`, `or_()`, and `not_()`.
+
+    In [5]: run conjunctions1.py
+    2016-03-04 19:18:15,117 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_id, cookies.cookie_name, cookies.cookie_recipe_url, cookies.cookie_sku, cookies.quantity, cookies.unit_cost
+    FROM cookies
+    WHERE cookies.quantity > %s AND cookies.unit_cost < %s
+    2016-03-04 19:18:15,118 INFO sqlalchemy.engine.base.Engine (23, 0.4)
+    peanut butter
+
+    In [6]: run conjunctions2.py
+    2016-03-04 19:20:00,578 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_id, cookies.cookie_name, cookies.cookie_recipe_url, cookies.cookie_sku, cookies.quantity, cookies.unit_cost
+    FROM cookies
+    WHERE cookies.quantity BETWEEN %s AND %s OR (cookies.cookie_name LIKE concat(concat('%%', %s), '%%'))
+    2016-03-04 19:20:00,578 INFO sqlalchemy.engine.base.Engine (10, 50, 'chip')
+    chocolate chip
+    white chocolate chip and macadamia nut
+    dark chocolate chip
+    peanut butter
+
+## Updating Data
+
+Updates are very similar to inserts - except we use `where` to specify which
+rows to change.
+
+    In [7]: run updatingdata1.py
+    2016-03-04 19:25:48,866 INFO sqlalchemy.engine.base.Engine UPDATE cookies SET quantity=(cookies.quantity + %s) WHERE cookies.cookie_name = %s
+    2016-03-04 19:25:48,866 INFO sqlalchemy.engine.base.Engine (120, 'chocolate chip')
+    2016-03-04 19:25:48,876 INFO sqlalchemy.engine.base.Engine COMMIT
+    1
+    2016-03-04 19:25:48,878 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_id, cookies.cookie_name, cookies.cookie_recipe_url, cookies.cookie_sku, cookies.quantity, cookies.unit_cost
+    FROM cookies
+    WHERE cookies.cookie_name = %s
+    2016-03-04 19:25:48,879 INFO sqlalchemy.engine.base.Engine ('chocolate chip',)
+               cookie_id: 1
+             cookie_name: chocolate chip
+       cookie_recipe_url: http://some.aweso.me/cookie/recipe.html
+              cookie_sku: CC01
+                quantity: 132
+               unit_cost: 0.50
+
+## Deleting Data
+
+
