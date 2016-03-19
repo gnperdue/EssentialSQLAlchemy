@@ -496,4 +496,87 @@ rows to change.
 
 ## Deleting Data
 
+We may use either the `delete()` function or the `delete()` `Table` method.
+`delete` takes no values parameter - only an optional `where` clause (which, if
+omitted, will cause all rows in the table to be deleted).
 
+## Joins
+
+We use `join()` and `outerjoin()` to query related data.
+
+    In [2]: run joins1.py
+    2016-03-15 22:02:58,472 INFO sqlalchemy.engine.base.Engine SELECT orders.order_id, users.username, users.phone, cookies.cookie_name, line_items.quantity, line_items.extended_cost
+    FROM orders INNER JOIN users ON users.user_id = orders.user_id INNER JOIN line_items ON orders.order_id = line_items.order_id INNER JOIN cookies ON cookies.cookie_id = line_items.cookie_id
+    WHERE users.username = %s
+    2016-03-15 22:02:58,472 INFO sqlalchemy.engine.base.Engine ('cookiemon',)
+    (1, 'cookiemon', '111-111-1111', 'chocolate chip', 2, Decimal('1.00'))
+    (1, 'cookiemon', '111-111-1111', 'white chocolate chip and macadamia nut', 12, Decimal('3.00'))
+
+    In [3]: run joins2.py
+    2016-03-15 22:07:41,410 INFO sqlalchemy.engine.base.Engine SELECT users.username, count(orders.order_id) AS count_1
+    FROM users LEFT OUTER JOIN orders ON users.user_id = orders.user_id GROUP BY users.username
+    2016-03-15 22:07:41,410 INFO sqlalchemy.engine.base.Engine ()
+    ('cakeeater', 1)
+    ('cookiemon', 1)
+    ('pieguy', 0)
+
+SQLAlchemy knows how to join the `users` and `orders` tables because of the foreign
+key defined in the `orders` table.
+
+## Aliases
+
+When using joins, we often need to refer to a table more than once. In SQL, we use
+_aliases_ for this. Suppose we have the following (partial) schema for an org
+chart:
+
+    employee_table = Table(
+        'employee', metadata,
+        Column('id', Integer, primary_key=True),
+        Column('manager', None, ForeignKey('employee.id')),
+        Column('name', String(255)))
+
+What if we want to select all employees managed by an employee named 'Fred'? In
+SQL, we would write:
+
+    SELECT employee.name
+    FROM employee, employee AS manager
+    WHERE employee.manager_id = manager.id
+    AND manager.name = 'Fred';
+
+SQLAlchemy also offers an `alias()`.
+
+    In [1]: run alias1.py
+    SELECT employee.name
+    FROM employee, employee AS mgr
+    WHERE employee.manager_id = mgr.id AND mgr.name = :name_1
+
+SQLAlchemy may also select the name automatically, which is useful for avoiding
+collisions.
+
+## Grouping
+
+When grouping, we need one or more columns to group on and one or more columns
+that is makes sense to aggregate with counts, sums, etc.
+
+    In [1]: run grouping1.py
+    2016-03-18 19:18:31,211 INFO sqlalchemy.engine.base.Engine SHOW VARIABLES LIKE 'sql_mode'
+    ...
+    2016-03-18 19:18:31,237 INFO sqlalchemy.engine.base.Engine SELECT users.username, count(orders.order_id) AS count_1
+    FROM users LEFT OUTER JOIN orders ON users.user_id = orders.user_id GROUP BY users.username
+    2016-03-18 19:18:31,237 INFO sqlalchemy.engine.base.Engine ()
+    ('cakeeater', 1)
+    ('cookiemon', 1)
+    ('pieguy', 0)
+    
+## Chaining
+
+Chaining is particularly useful when we're applying logic to build up a query.
+
+    In [2]: run chaining1.py
+    2016-03-18 19:54:14,948 INFO sqlalchemy.engine.base.Engine SELECT orders.order_id, users.username, users.phone, cookies.cookie_name, line_items.quantity, line_items.extended_cost
+    FROM users INNER JOIN orders ON users.user_id = orders.user_id INNER JOIN line_items ON orders.order_id = line_items.order_id INNER JOIN cookies ON cookies.cookie_id = line_items.cookie_id
+    WHERE users.username = %s
+    2016-03-18 19:54:14,948 INFO sqlalchemy.engine.base.Engine ('cakeeater',)
+    (2, 'cakeeater', '222-222-2222', 'chocolate chip', 24, Decimal('12.00'))
+    (2, 'cakeeater', '222-222-2222', 'peanut butter', 6, Decimal('6.00'))
+    
