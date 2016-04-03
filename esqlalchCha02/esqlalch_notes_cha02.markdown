@@ -580,3 +580,36 @@ Chaining is particularly useful when we're applying logic to build up a query.
     (2, 'cakeeater', '222-222-2222', 'chocolate chip', 24, Decimal('12.00'))
     (2, 'cakeeater', '222-222-2222', 'peanut butter', 6, Decimal('6.00'))
     
+We may also perform conditional chaining.
+
+    In [2]: run chaining2.py
+    2016-03-29 18:15:19,128 INFO sqlalchemy.engine.base.Engine SELECT orders.order_id, users.username, users.phone
+    FROM users INNER JOIN orders ON users.user_id = orders.user_id
+    WHERE users.username = %s
+    2016-03-29 18:15:19,128 INFO sqlalchemy.engine.base.Engine ('cakeeater',)
+    (2, 'cakeeater', '222-222-2222')
+    ...
+
+## Raw Queries
+
+It is also possible to execute raw SQL statements or use raw SQL in part of
+an SQLAlchemy Core query. It will return a `ResultProxy` that we interact with
+in the same way.
+
+    In [4]: result = connection.execute('select * from orders').fetchall()
+    2016-03-29 18:17:26,135 INFO sqlalchemy.engine.base.Engine select * from orders
+    2016-03-29 18:17:26,135 INFO sqlalchemy.engine.base.Engine ()
+    
+    In [5]: print result
+    [(1, 1, 0), (2, 2, 0)]
+
+We may use the `text()` function to make queries clearer sometimes:
+
+    In [2]: run rawquery1.py
+    2016-04-03 07:31:27,488 INFO sqlalchemy.engine.base.Engine SELECT users.user_id, users.username, users.email_address, users.phone, users.password, users.created_on, users.updated_on
+    FROM users
+    WHERE username='cookiemon'
+    2016-04-03 07:31:27,488 INFO sqlalchemy.engine.base.Engine ()
+    [(1, 'cookiemon', 'mon@cookie.com', '111-111-1111', 'password', datetime.datetime(2016, 3, 10, 20, 50, 57), datetime.datetime(2016, 3, 10, 20, 50, 57))]
+
+
