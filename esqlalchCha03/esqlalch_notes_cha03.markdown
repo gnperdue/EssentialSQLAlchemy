@@ -61,3 +61,19 @@ in `try-except` blocks is inadequate. We should use transactions.
 
 ## Transactions
 
+Transactions are a way to ensure that groups of database statements either succeed
+or fail all together as a unit. At the start of a transaction, we record the
+current state of the db, then we execute multiple SQL statements. If they all
+succeed, the database continues normally and we discard the prior state. However,
+if even one fails, we catch the error and roll back to the saved state.
+
+We will add a constraint to our databases to keep the number of cookies in
+inventory non-negative. This probably means we need to re-create the tables.
+
+* Go into MariaDB directly, `DROP TABLE table` all over the place.
+* Run `fill_out_table.py` (sort of hacked together from previous scripts - not very
+elegant).
+* Well... the book wants different orders, so let's re-write `fill_out_table.py`
+and fix it to look more like they want in this chapter...
+
+Okay, next we need to define the `ship_it` function...

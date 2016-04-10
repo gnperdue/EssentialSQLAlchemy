@@ -18,10 +18,12 @@ cookies = Table('cookies', metadata,
                 Column('cookie_recipe_url', String(255)),
                 Column('cookie_sku', String(55)),
                 Column('quantity', Integer()),
-                Column('unit_cost', Numeric(12, 2))
+                Column('unit_cost', Numeric(12, 2)),
+                CheckConstraint('unit_cost >= 0.00',
+                                name='unit_cost_positive'),
+                CheckConstraint('quantity >= 0.00',
+                                name='quantity_positive')
                 )
-
-CheckConstraint('unit_cost >= 0.00', name='unit_cost_positive')
 
 # Instead of specifying the index inside the `Column`, we could say:
 # from sqlalchemy import Index
