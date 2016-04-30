@@ -77,3 +77,94 @@ elegant).
 and fix it to look more like they want in this chapter...
 
 Okay, next we need to define the `ship_it` function...
+
+    In [3]: run shipit1.py
+    2016-04-30 13:00:19,997 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_name, cookies.quantity
+    FROM cookies
+    2016-04-30 13:00:19,998 INFO sqlalchemy.engine.base.Engine ()
+    ('chocolate chip', 12)
+    ('dark chocolate chip', 1)
+    ('white chocolate chip and macadamia nut', 1)
+    ('peanut butter', 24)
+    ('oatmeal raisin', 100)
+    ...
+    then, shipping it...
+    ...
+    then, again check the cookies
+    ...
+    ('chocolate chip', 3)
+    ('dark chocolate chip', 1)
+    ('white chocolate chip and macadamia nut', 1)
+    ('peanut butter', 24)
+    ('oatmeal raisin', 100)
+
+Shouldn't we first check to see if the order has already been shipped, and, if
+it hasn't, refuse to do the update?
+
+We need to use exceptions to make it such that we only ship whole orders to
+customers? **Transactions** provide a better way.
+
+We initiate transactions by calling `begin()` on the connection object. The
+result of the call is a transaction object we may use to control the results
+of all our statements. If all of them succeed, we may call `commit()` on the
+transaction object. If any fail, we call `rollback()` instead.
+
+We may re-write `shipit()` to use transactions.
+
+    In [4]: run shipit2.py
+    2016-04-30 13:13:05,289 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_name, cookies.quantity
+    FROM cookies
+    2016-04-30 13:13:05,289 INFO sqlalchemy.engine.base.Engine ()
+    ('chocolate chip', 3)
+    ('dark chocolate chip', 1)
+    ('white chocolate chip and macadamia nut', 1)
+    ('peanut butter', 24)
+    ('oatmeal raisin', 100)
+    ...
+    after shipping it...
+    ('chocolate chip', -6)
+    ('dark chocolate chip', 1)
+    ('white chocolate chip and macadamia nut', 1)
+    ('peanut butter', 24)
+    ('oatmeal raisin', 100)
+
+Hmmm, well, it didn't stop the order for us because we must not have had the
+proper constraint on the `cookies` table.
+
+Try rebuilding the tables again. Go into MariaDB and drop them all...
+
+    MariaDB [essential_alchemy]> SHOW TABLES;
+    +-----------------------------+
+    | Tables_in_essential_alchemy |
+    +-----------------------------+
+    | cookies                     |
+    | line_items                  |
+    | orders                      |
+    | users                       |
+    +-----------------------------+
+    4 rows in set (0.00 sec)
+    
+    MariaDB [essential_alchemy]> DROP TABLE line_items;
+    Query OK, 0 rows affected (0.01 sec)
+    
+    MariaDB [essential_alchemy]> DROP TABLE orders;
+    Query OK, 0 rows affected (0.01 sec)
+    
+    MariaDB [essential_alchemy]> DROP TABLE users;
+    Query OK, 0 rows affected (0.01 sec)
+
+Some funny error/hang-up when dropping cookies... kill and try again.
+
+    MariaDB [essential_alchemy]> DROP TABLE cookies;
+    Query OK, 0 rows affected (10.32 sec)
+
+Ah, problem must have been we had a transaction begun in Python, and we didn't
+close it. (Quitting IPython made it possible to drop the table.)
+
+So, looking at the db code, we have a constraint on quantity...
+
+                CheckConstraint('quantity >= 0.00',
+                                name='quantity_positive')
+
+Why didn't it cause an integrity error? And... the reason is MariaDB and
+MySQL don't support `CHECK` constraints.
