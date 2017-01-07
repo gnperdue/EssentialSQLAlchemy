@@ -42,9 +42,9 @@ Running with Python 2.7:
 Installed via `conda`:
 
     EssentialSQLAlchemy$ conda list | grep sql
-    pymysql                   0.6.7                    py27_0
-    sqlalchemy                1.0.9                    py27_0
-    sqlite                    3.9.2                         0
+    pymysql                   0.7.9                    py27_0
+    sqlalchemy                1.0.12                   py27_0
+    sqlite                    3.13.0                        0
 
 ### Connecting to a Database
 
