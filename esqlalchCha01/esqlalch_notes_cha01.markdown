@@ -32,18 +32,22 @@ the specific backend. These may be found in `sqlalchemy.types`, and also in
 * `Time` (== `DATETIME`)
 
 Good examples of SQL and vendor specific types are `CHAR` and `NVARCHAR`, which
-benefit from being the proper SQL type or types in databases from before
+benefit from using the proper SQL type instead of a generic type. It is
+particularly important to use specific types if working with a DB from before
 SQLAlchemy was created. The SQL standard types are available in `sqlalchemy.types`
 in all caps. Vendor specific types may be found in `sqlalchemy.dialects`, again
-in all caps.
+in all caps (check submodules for each vendor).
 
 ## Metadata
 
 Metadata acts as a sort of catalog of `Table` objects with information about the
-engine and connection, and may be accessed via `MetaData.tables`.
+engine and connection, and may be accessed via a dictionary, `MetaData.tables`.
 
     from sqlalchemy import MetaData
     metadata = MetaData()
+
+Once we have a `MetaData` object to hold the database structure, we may start
+defining tables.
 
 ## Tables
 
@@ -54,15 +58,17 @@ building blocks. Note:
 * we may mark primary keys
 * we may specify indices
 
+The fundamental building block of a `Table` is a `Column`...
+
 ### Columns
 
 Columns define the fields in a table and provide the primary means by which we
 define other constraints through their keyword arguments. Different column types
 feature different primary arguments. Also:
 
-* may mark required
-* force uniqueness
-* set initial defaults
+* may mark required (`nullable=False`)
+* force uniqueness (`unique=True`)
+* set initial defaults (e.g., `default=datetime.now`)
 
 It is also possible to declare table constructs and constraints outisde of `Column`
 objects. This is important when working with existing databases.
@@ -82,6 +88,9 @@ separately, e.g.
     PrimaryKeyConstraint('user_id', name='user_pk')
     UniqueConstraint('username', name='uix_username')
     CheckConstraint('unit_cost >= 0.00', name='unit_cost_positive')
+
+We can make composite Primary keys by setting `primary_key=True` on multiple
+columns.
 
 ### Indexes
 
@@ -109,7 +118,8 @@ Note that SQLAlchemy will only perform the resolution of a string to a table nam
 and column the first time it is accessed. If we used hard references, such as
 `cookies.c.cookie_id` in our `ForeignKey` definitions, it will perform resolution
 during module initialization. This could fail depending on the order in which
-the tables are loaded.
+the tables are loaded. Therefore, it is better to use strings when defining the
+`ForeignKey`.
 
 ## Persisting the Tables
 

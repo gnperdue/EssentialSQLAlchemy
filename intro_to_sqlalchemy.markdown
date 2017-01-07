@@ -106,3 +106,11 @@ Working?...
 
 Okay, so it probably does work when we use an existing `DATABASE`.
 
+    MariaDB [(none)]> USE essential_alchemy;
+    Database changed
+    MariaDB [essential_alchemy]> SHOW TABLES;
+    Empty set (0.00 sec)
+    
+    MariaDB [essential_alchemy]>
+
+
