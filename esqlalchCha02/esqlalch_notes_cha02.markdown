@@ -163,8 +163,9 @@ method on the `Table` object.
 ### `ResultProxy`
 
 A `ResultProxy` is a wrapper around a DBAPI cursor object and it is meant to make
-it simpler to use and manipulate the results of a statement. With `results` from
-`select2.py`:
+it simpler to use and manipulate the results of a statement. For example, we may
+handle query results through accessing an index, name, or Column object. With
+`results` from `select2.py`:
 
     In [4]: results[0]
     Out[4]: (1, 'chocolate chip', 'http://some.aweso.me/cookie/recipe.html', 'CC01', 12, Decimal('0.50'))
@@ -179,6 +180,9 @@ it simpler to use and manipulate the results of a statement. With `results` from
     
     In [8]: first_row[cookies_tables.cookies.c.cookie_name]
     Out[8]: 'chocolate chip'
+
+    In [9]: results[0][cookies_tables.cookies.c.cookie_name]
+    Out[9]: 'chocolate chip'
 
 We may also iterate over `ResultsProxy`s... Still working with objects from
 `select2.py`:
@@ -208,7 +212,7 @@ We can use all the following methods to fetch results:
 
 * `first()` - get the first if it exists and then close the connection
 * `fetchone()` - returns one row and leaves the cursor open for additional calls
-* `scalar()` - returns a single valueif a query results in a single record with
+* `scalar()` - returns a single value if a query results in a single record with
 one column
 * `keys()` will get a list of the column names.
 
@@ -241,6 +245,9 @@ row with one column
 Often, we only need a portion of the columns...
 
 ### Controlling the Columns in the Query
+
+In order to limit the fields returned by a query, we should pass the desired
+columns into the `select()` constructor as a list:
 
     In [19]: run select3.py
     2016-02-26 21:52:31,777 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_name, cookies.quantity
@@ -287,6 +294,82 @@ We may call `order_by()` on our select:
     24 - peanut butter
     100 - oatmeal raisin
 
+Note some tricky issues - proof we're working with iterators:
+
+    In [41]: %paste
+    s = select([cookies_tables.cookies.c.cookie_name,
+                cookies_tables.cookies.c.quantity])
+    
+    ## -- End pasted text --
+    
+    In [42]: type(s)
+    Out[42]: sqlalchemy.sql.selectable.Select
+    
+    In [43]: s = s.order_by(cookies_tables.cookies.c.quantity)
+    
+    In [44]: rp = connection.execute(s)
+    2017-02-03 08:38:19,530 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_name, cookies.quantity
+    FROM cookies ORDER BY cookies.quantity
+    2017-02-03 08:38:19,530 INFO sqlalchemy.engine.base.Engine {}
+    
+    In [45]: for cookie in rp:
+       ....:     prin('{} - {}'.format(cookie.quantity, cookie.cookie_name))
+       ....:
+       ---------------------------------------------------------------------------
+    NameError                                 Traceback (most recent call last)
+    <ipython-input-45-99ab8c91ff30> in <module>()
+          1 for cookie in rp:
+    ----> 2     prin('{} - {}'.format(cookie.quantity, cookie.cookie_name))
+          3
+    NameError: name 'prin' is not defined
+    
+    In [46]: for cookie in rp:
+       print('{} - {}'.format(cookie.quantity, cookie.cookie_name))
+       ....:
+    1 - dark chocolate chip
+    12 - chocolate chip
+    24 - peanut butter
+    100 - oatmeal raisin
+
+When we 'fix' the problem, we lost a cookie! This is because even if the function
+inside the `for` loop failed, the iterator still worked its magic:
+
+    In [47]: rp = connection.execute(s)
+    2017-02-03 08:39:46,765 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_name, cookies.quantity
+    FROM cookies ORDER BY cookies.quantity
+    2017-02-03 08:39:46,765 INFO sqlalchemy.engine.base.Engine {}
+    
+    In [48]: for cookie in rp:
+        print('{} - {}'.format(cookie.quantity, cookie.cookie_name))
+        ....:
+    1 - white chocolate chip and macadamia nut
+    1 - dark chocolate chip
+    12 - chocolate chip
+    24 - peanut butter
+    100 - oatmeal raisin
+
+Note that we could have chained the operations, `select()` and `order_by()`
+into `select([...]).order_by(...)`. This can make lines too long and hard to
+read though, so be careful:
+
+    In [51]: s = select([cookies_tables.cookies.c.cookie_name, cookies_tables.cookies.c.quantity]).order_by(cookies_tables.cookies.c.quantity)
+    
+    In [52]: rp = connection.execute(s)
+    2017-02-03 08:45:53,869 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_name, cookies.quantity
+    FROM cookies ORDER BY cookies.quantity
+    2017-02-03 08:45:53,870 INFO sqlalchemy.engine.base.Engine {}
+    
+    In [53]: %paste
+    for cookie in rp:
+        print('{} - {}'.format(cookie.quantity, cookie.cookie_name))
+    
+    ## -- End pasted text --
+    1 - white chocolate chip and macadamia nut
+    1 - dark chocolate chip
+    12 - chocolate chip
+    24 - peanut butter
+    100 - oatmeal raisin
+
 We may also use descending order:
 
     ... restarting the session ...
@@ -318,6 +401,30 @@ query, we must use the `limit()` function.
     1 - white chocolate chip and macadamia nut
     1 - dark chocolate chip
 
+Or, typed out:
+
+    In [60]: s = select([cookies_tables.cookies.c.cookie_name,
+       ....: cookies_tables.cookies.c.quantity])
+    
+    In [61]: s = s.order_by(cookies_tables.cookies.c.cookie_name)
+    
+    In [62]: s = s.limit(3)
+    
+    In [63]: rp = connection.execute(s)
+    2017-02-03 08:51:57,525 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_name, cookies.quantity
+    FROM cookies ORDER BY cookies.cookie_name
+     LIMIT %(param_1)s
+     2017-02-03 08:51:57,525 INFO sqlalchemy.engine.base.Engine {u'param_1': 3}
+    
+    In [64]: %paste
+    for cookie in rp:
+        print('{} - {}'.format(cookie.quantity, cookie.cookie_name))
+    
+    ## -- End pasted text --
+    12 - chocolate chip
+    1 - dark chocolate chip
+    100 - oatmeal raisin
+
 ### Built-in SQL Functions and Labels
 
 SQLAlchemy can also leverage SQL functions on the DB backend. To use functions
@@ -339,6 +446,33 @@ are wrapped around the columns on which they operate.
     1 row in set (0.00 sec)
 
 And,
+
+    In [67]: s = select([func.sum(cookies_tables.cookies.c.quantity)])
+    
+    In [68]: rp = connection.execute(s)
+    2017-02-03 08:55:40,399 INFO sqlalchemy.engine.base.Engine SELECT sum(cookies.quantity) AS sum_1
+    FROM cookies
+    2017-02-03 08:55:40,399 INFO sqlalchemy.engine.base.Engine {}
+    
+    In [69]: print(rp.scalar())
+    138
+
+Note the use of `scalar` - here it is appropriate because we want only the
+leftmost columun in the record.
+
+    In [70]: rp = connection.execute(s)
+    2017-02-03 08:55:56,127 INFO sqlalchemy.engine.base.Engine SELECT sum(cookies.quantity) AS sum_1
+    FROM cookies
+    2017-02-03 08:55:56,128 INFO sqlalchemy.engine.base.Engine {}
+    
+    In [71]: results = rp.fetchall()
+    
+    In [72]: results
+    Out[72]: [(Decimal('138'),)]
+
+**I'm here**
+
+And in a new session,
 
     In [6]: run sqlfunc2.py
     2016-02-28 17:08:47,905 INFO sqlalchemy.engine.base.Engine SELECT count(cookies.cookie_name) AS count_1
