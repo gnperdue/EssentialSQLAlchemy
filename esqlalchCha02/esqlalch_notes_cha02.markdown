@@ -470,8 +470,6 @@ leftmost columun in the record.
     In [72]: results
     Out[72]: [(Decimal('138'),)]
 
-**I'm here**
-
 And in a new session,
 
     In [6]: run sqlfunc2.py
@@ -498,6 +496,21 @@ We can make the result a bit more clear with the `label()` function:
     2016-03-02 21:07:25,438 INFO sqlalchemy.engine.base.Engine ()
     ['inventory_count']
     5
+
+Or,
+
+    In [12]: rp = connection.execute(s)
+    2017-02-06 09:16:34,098 INFO sqlalchemy.engine.base.Engine SELECT count(cookies.cookie_name) AS inventory_count
+    FROM cookies
+    2017-02-06 09:16:34,099 INFO sqlalchemy.engine.base.Engine {}
+    
+    In [13]: record = rp.first()
+    
+    In [14]: record['inventory_count']
+    Out[14]: 5
+    
+    In [15]: print(record.keys())
+    ['inventory_count']
 
 ### Filtering
 
@@ -597,6 +610,19 @@ Conjunctions in SQLAlchemcy are `and_()`, `or_()`, and `not_()`.
     2016-03-04 19:18:15,118 INFO sqlalchemy.engine.base.Engine (23, 0.4)
     peanut butter
 
+This is the same, of course, as
+
+    MariaDB [essential_alchemy]> SELECT cookie_name FROM cookies
+        -> WHERE quantity > 23 AND unit_cost < 0.40;
+    +---------------+
+    | cookie_name   |
+    +---------------+
+    | peanut butter |
+    +---------------+
+    1 row in set (0.00 sec)
+
+And,
+
     In [6]: run conjunctions2.py
     2016-03-04 19:20:00,578 INFO sqlalchemy.engine.base.Engine SELECT cookies.cookie_id, cookies.cookie_name, cookies.cookie_recipe_url, cookies.cookie_sku, cookies.quantity, cookies.unit_cost
     FROM cookies
@@ -606,6 +632,44 @@ Conjunctions in SQLAlchemcy are `and_()`, `or_()`, and `not_()`.
     white chocolate chip and macadamia nut
     dark chocolate chip
     peanut butter
+
+Which is the same as
+
+    MariaDB [essential_alchemy]> SELECT cookie_name FROM cookies
+        -> WHERE quantity BETWEEN 10 and 50 OR
+        -> cookie_name REGEXP 'chip';
+    +----------------------------------------+
+    | cookie_name                            |
+    +----------------------------------------+
+    | chocolate chip                         |
+    | white chocolate chip and macadamia nut |
+    | dark chocolate chip                    |
+    | peanut butter                          |
+    +----------------------------------------+
+    4 rows in set (0.00 sec)
+
+`BETWEEN` is pretty useful:
+
+    MariaDB [essential_alchemy]> SELECT cookie_name, quantity FROM cookies
+        -> WHERE quantity NOT BETWEEN 10 and 50;
+    +----------------------------------------+----------+
+    | cookie_name                            | quantity |
+    +----------------------------------------+----------+
+    | white chocolate chip and macadamia nut |        1 |
+    | dark chocolate chip                    |        1 |
+    | oatmeal raisin                         |      100 |
+    +----------------------------------------+----------+
+    3 rows in set (0.00 sec)
+    
+    MariaDB [essential_alchemy]> SELECT cookie_name, quantity FROM cookies
+        -> WHERE quantity BETWEEN 10 and 50;
+    +----------------+----------+
+    | cookie_name    | quantity |
+    +----------------+----------+
+    | chocolate chip |       12 |
+    | peanut butter  |       24 |
+    +----------------+----------+
+    2 rows in set (0.00 sec)
 
 ## Updating Data
 
