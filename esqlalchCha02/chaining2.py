@@ -12,8 +12,7 @@ connection = cookies_tables.engine.connect()
 def get_orders_by_customer(cust_name, shipped=None, details=False):
     columns = [cookies_tables.orders.c.order_id,
                cookies_tables.users.c.username,
-               cookies_tables.users.c.phone,
-    ]
+               cookies_tables.users.c.phone]
     joins = cookies_tables.users.join(cookies_tables.orders)
     if details:
         columns.extend([cookies_tables.cookies.c.cookie_name,

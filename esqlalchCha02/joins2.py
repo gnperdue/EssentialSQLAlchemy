@@ -13,6 +13,8 @@ columns = [cookies_tables.users.c.username,
            func.count(cookies_tables.orders.c.order_id)]
 
 all_orders = select(columns)
+# SQLAlchemy knows how to join the `users` and `orders` tables because of
+# the foreign key defined in the `orders` table.
 all_orders = all_orders.select_from(
     cookies_tables.users.outerjoin(cookies_tables.orders))
 all_orders = all_orders.group_by(cookies_tables.users.c.username)

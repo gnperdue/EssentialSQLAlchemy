@@ -698,6 +698,13 @@ We may use either the `delete()` function or the `delete()` `Table` method.
 `delete` takes no values parameter - only an optional `where` clause (which, if
 omitted, will cause all rows in the table to be deleted).
 
+#### Filling out the table
+
+Next, we run:
+
+    In [21]: run fill_out_table.py
+    2017-02-15 08:26:23,601 INFO sqlalchemy.engine.base.Engine INSERT INTO ...
+
 ## Joins
 
 We use `join()` and `outerjoin()` to query related data.
@@ -765,7 +772,38 @@ that is makes sense to aggregate with counts, sums, etc.
     ('cakeeater', 1)
     ('cookiemon', 1)
     ('pieguy', 0)
+
+Also note, if we break it down,
+
+    In [7]: columns = [cookies_tables.users.c.username,
+    func.count(cookies_tables.orders.c.order_id)]
     
+    In [8]: all_orders = select(columns)
+    
+    In [9]: all_orders = all_orders.select_from(
+       ...: cookies_tables.users.outerjoin(cookies_tables.orders))
+    
+    In [10]: all_orders = all_orders.group_by(cookies_tables.users.c.username)
+    
+    In [11]: print(all_orders)
+    SELECT users.username, count(orders.order_id) AS count_1
+    FROM users LEFT OUTER JOIN orders ON users.user_id = orders.user_id GROUP BY users.username
+
+If we copy and paste the SQL:
+
+    MariaDB [essential_alchemy]> SELECT users.username, count(orders.order_id)
+        -> AS count_1
+        -> FROM users LEFT OUTER JOIN orders ON users.user_id = orders.user_id
+        -> GROUP BY users.username;
+    +-----------+---------+
+    | username  | count_1 |
+    +-----------+---------+
+    | cakeeater |       1 |
+    | cookiemon |       1 |
+    | pieguy    |       0 |
+    +-----------+---------+
+    3 rows in set (0.00 sec)
+
 ## Chaining
 
 Chaining is particularly useful when we're applying logic to build up a query.
@@ -809,5 +847,3 @@ We may use the `text()` function to make queries clearer sometimes:
     WHERE username='cookiemon'
     2016-04-03 07:31:27,488 INFO sqlalchemy.engine.base.Engine ()
     [(1, 'cookiemon', 'mon@cookie.com', '111-111-1111', 'password', datetime.datetime(2016, 3, 10, 20, 50, 57), datetime.datetime(2016, 3, 10, 20, 50, 57))]
-
-
