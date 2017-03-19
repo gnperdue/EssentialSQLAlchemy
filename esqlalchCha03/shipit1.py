@@ -30,6 +30,7 @@ def ship_it(order_id):
     result = connection.execute(u)
     print("Shipped order id: {}".format(order_id))
 
+print("Check before shipping...\n")
 s = select([cookies_tables.cookies.c.cookie_name,
             cookies_tables.cookies.c.quantity])
 result = connection.execute(s).fetchall()
@@ -38,8 +39,10 @@ for row in result:
 
 # comment this out in case we accidently run this, but it should be in for
 # following along with the text...
+# print("Shipping order...\n")
 # ship_it(1)
 
+print("Check after shipping...\n")
 s = select([cookies_tables.cookies.c.cookie_name,
             cookies_tables.cookies.c.quantity])
 result = connection.execute(s).fetchall()

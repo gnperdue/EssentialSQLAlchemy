@@ -19,8 +19,10 @@ try:
 except IntegrityError as error:
     print(error)
 
-s = select([cookies_tables.users.c.username])
+s = select([
+    cookies_tables.users.c.username,
+    cookies_tables.users.c.password
+])
 results = connection.execute(s)
 for result in results:
-    print(result.username)
-    print(result.password)
+    print('{:>20} : {:>20}'.format(result.username, result.password))

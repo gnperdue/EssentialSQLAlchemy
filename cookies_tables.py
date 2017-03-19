@@ -12,6 +12,8 @@ from mariadb_connect import conn_str
 
 metadata = MetaData()
 
+# note, we are being a bit silly here - we are using MariaDB, but
+# MariaDB and MySQL don't support `CheckConstraint`s!
 cookies = Table('cookies', metadata,
                 Column('cookie_id', Integer(), primary_key=True),
                 Column('cookie_name', String(50), index=True),

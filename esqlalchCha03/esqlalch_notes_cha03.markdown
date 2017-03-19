@@ -24,6 +24,13 @@ exist.
     
     AttributeError: Could not locate column in row for column 'password'
 
+Also,
+
+    In [13]: s = select([cookies_tables.users.c.username,
+        ...:             cookies_tables.users.c.hobby])
+    ---------------------------------------------------------------------------
+    AttributeError                            Traceback (most recent call last)
+
 ## `IntegrityError`
 
 An `IntegrityError` occurs when we attempt to violate the constraints on a
@@ -56,8 +63,9 @@ only showing us the call stack for showing the error, etc.
     (pymysql.err.IntegrityError) (1062, u"Duplicate entry 'bruleboy' for key 'username'")
     ...
 
-If we need multiple statements to succeed, then wrapping individual statements
-in `try-except` blocks is inadequate. We should use transactions.
+If we need multiple statements to succeed (and that depend on each other),
+then wrapping individual statements in `try-except` blocks is inadequate.
+We should use _transactions_.
 
 ## Transactions
 
@@ -70,11 +78,15 @@ if even one fails, we catch the error and roll back to the saved state.
 We will add a constraint to our databases to keep the number of cookies in
 inventory non-negative. This probably means we need to re-create the tables.
 
-* Go into MariaDB directly, `DROP TABLE table` all over the place.
+* Go into MariaDB directly, `DROP TABLE table` all over the place (might
+need to quit from IPython if we have a connection open).
 * Run `fill_out_table.py` (sort of hacked together from previous scripts - not very
 elegant).
 * Well... the book wants different orders, so let's re-write `fill_out_table.py`
 and fix it to look more like they want in this chapter...
+* (Of course, actually, it might be silly to do this if running through a
+second time since we have put the constraints into the table definitions
+anyway...)
 
 Okay, next we need to define the `ship_it` function...
 

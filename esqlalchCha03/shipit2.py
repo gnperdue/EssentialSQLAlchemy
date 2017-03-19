@@ -44,7 +44,11 @@ result = connection.execute(s).fetchall()
 for row in result:
     print(row)
 
-ship_it(1)
+# comment this out in case we accidently run this, but it should be in for
+# following along with the text...
+order = 2
+print("Shipping order {}...\n".format(order))
+ship_it(order)
 
 s = select([cookies_tables.cookies.c.cookie_name,
             cookies_tables.cookies.c.quantity])
