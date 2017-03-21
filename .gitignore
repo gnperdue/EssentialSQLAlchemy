@@ -1,1 +1,4 @@
 .ropeproject
+
+# ignore the example code dir
+essential-sqlalchemy-2e/
